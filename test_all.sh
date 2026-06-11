@@ -19,15 +19,19 @@ echo "Supertonic - Testing All Examples"
 echo "=================================="
 echo ""
 
-# Ask user to select test mode
-echo "Select test mode:"
-echo "  1) Default inference only"
-echo "  2) Batch inference only"
-echo "  3) Long-form inference only"
-echo "  4) All tests (default + batch + long-form)"
-echo -e "Enter your choice (1/2/3/4) [default: 1]: \c"
-read -r test_mode
-test_mode=${test_mode:-1}
+# Accept TEST_MODE env var for non-interactive (Docker) use, otherwise prompt
+if [ -n "${TEST_MODE:-}" ]; then
+    test_mode="$TEST_MODE"
+else
+    echo "Select test mode:"
+    echo "  1) Default inference only"
+    echo "  2) Batch inference only"
+    echo "  3) Long-form inference only"
+    echo "  4) All tests (default + batch + long-form)"
+    echo -e "Enter your choice (1/2/3/4) [default: 1]: \c"
+    read -r test_mode
+    test_mode=${test_mode:-1}
+fi
 
 case $test_mode in
     1)
@@ -75,9 +79,13 @@ BATCH_LANG_2="ko"
 LONGFORM_VOICE_STYLE="assets/voice_styles/M1.json"
 LONGFORM_TEXT="This is a very long text that will be automatically split into multiple chunks. The system will process each chunk separately and then concatenate them together with natural pauses between segments. This ensures that even very long texts can be processed efficiently while maintaining natural speech flow and avoiding memory issues. The text chunking algorithm intelligently splits on paragraph and sentence boundaries, preserving the natural flow of the content. When a sentence is too long, it further splits on commas and spaces as needed. This multi-level approach ensures optimal chunk sizes for inference while maintaining linguistic coherence."
 
-# Ask if user wants to clean results folders
-echo -e "Do you want to clean all results folders before running tests? (y/N): \c"
-read -r response
+# Accept CLEAN_RESULTS env var for non-interactive (Docker) use, otherwise prompt
+if [ -n "${CLEAN_RESULTS:-}" ]; then
+    response="$CLEAN_RESULTS"
+else
+    echo -e "Do you want to clean all results folders before running tests? (y/N): \c"
+    read -r response
+fi
 if [[ "$response" =~ ^[Yy]$ ]]; then
     echo ""
     echo "Cleaning results folders..."
@@ -302,19 +310,23 @@ if [ "$TEST_LONGFORM" = true ]; then
 fi
 
 # ====================================
-# Swift
+# Swift  (skipped on Linux / Docker)
 # ====================================
-echo -e "${YELLOW}Testing Swift...${NC}"
-echo "Building Swift project..."
-cd swift && HOME="$SWIFT_HOME" CLANG_MODULE_CACHE_PATH="$CLANG_MODULE_CACHE_PATH" swift build --disable-sandbox -c release && cd ..
-if [ "$TEST_DEFAULT" = true ]; then
-    run_test "Swift (default)" "swift" "HOME='$SWIFT_HOME' CLANG_MODULE_CACHE_PATH='$CLANG_MODULE_CACHE_PATH' .build/release/example_onnx"
-fi
-if [ "$TEST_BATCH" = true ]; then
-    run_test "Swift (batch)" "swift" "HOME='$SWIFT_HOME' CLANG_MODULE_CACHE_PATH='$CLANG_MODULE_CACHE_PATH' .build/release/example_onnx --batch --voice-style ../$BATCH_VOICE_STYLE_1,../$BATCH_VOICE_STYLE_2 --text '$BATCH_TEXT_1|$BATCH_TEXT_2' --lang $BATCH_LANG_1,$BATCH_LANG_2"
-fi
-if [ "$TEST_LONGFORM" = true ]; then
-    run_test "Swift (long-form)" "swift" "HOME='$SWIFT_HOME' CLANG_MODULE_CACHE_PATH='$CLANG_MODULE_CACHE_PATH' .build/release/example_onnx --voice-style ../$LONGFORM_VOICE_STYLE --text '$LONGFORM_TEXT'"
+if command -v swift >/dev/null 2>&1; then
+    echo -e "${YELLOW}Testing Swift...${NC}"
+    echo "Building Swift project..."
+    cd swift && HOME="$SWIFT_HOME" CLANG_MODULE_CACHE_PATH="$CLANG_MODULE_CACHE_PATH" swift build --disable-sandbox -c release && cd ..
+    if [ "$TEST_DEFAULT" = true ]; then
+        run_test "Swift (default)" "swift" "HOME='$SWIFT_HOME' CLANG_MODULE_CACHE_PATH='$CLANG_MODULE_CACHE_PATH' .build/release/example_onnx"
+    fi
+    if [ "$TEST_BATCH" = true ]; then
+        run_test "Swift (batch)" "swift" "HOME='$SWIFT_HOME' CLANG_MODULE_CACHE_PATH='$CLANG_MODULE_CACHE_PATH' .build/release/example_onnx --batch --voice-style ../$BATCH_VOICE_STYLE_1,../$BATCH_VOICE_STYLE_2 --text '$BATCH_TEXT_1|$BATCH_TEXT_2' --lang $BATCH_LANG_1,$BATCH_LANG_2"
+    fi
+    if [ "$TEST_LONGFORM" = true ]; then
+        run_test "Swift (long-form)" "swift" "HOME='$SWIFT_HOME' CLANG_MODULE_CACHE_PATH='$CLANG_MODULE_CACHE_PATH' .build/release/example_onnx --voice-style ../$LONGFORM_VOICE_STYLE --text '$LONGFORM_TEXT'"
+    fi
+else
+    echo -e "${YELLOW}[Swift]${NC} swift not found — skipping (not available on Linux)"
 fi
 
 # ====================================

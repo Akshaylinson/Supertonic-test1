@@ -1,0 +1,29 @@
+# build artifacts
+cpp/build
+rust/target
+swift/.build
+.uv-cache
+.clang-module-cache
+.swift-home
+.dotnet
+.m2
+
+# results
+py/results
+nodejs/results
+go/results
+rust/results
+csharp/results
+java/results
+swift/results
+results
+
+# assets (downloaded fresh inside Docker)
+assets
+
+# git
+.git
+.gitattributes
+
+# misc
+**/*.wav

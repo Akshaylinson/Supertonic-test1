@@ -1,0 +1,15 @@
+services:
+  supertonic:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # 1 = default inference only
+      # 2 = batch inference only
+      # 3 = long-form inference only
+      # 4 = all tests
+      TEST_MODE: "1"
+      CLEAN_RESULTS: "n"
+    volumes:
+      # persist generated WAV outputs to host
+      - ./results:/app/results
